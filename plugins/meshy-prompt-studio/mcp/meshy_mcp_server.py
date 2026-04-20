@@ -310,7 +310,7 @@ def handle_json_rpc(request: dict[str, Any]) -> dict[str, Any] | None:
             {
                 "protocolVersion": "2024-11-05",
                 "capabilities": {"tools": {}},
-                "serverInfo": {"name": "meshy-api", "version": "1.3.0"},
+                "serverInfo": {"name": "meshy-api", "version": "1.4.0"},
             },
         )
     if method == "tools/list":

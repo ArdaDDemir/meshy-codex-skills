@@ -6,6 +6,8 @@ This project follows a lightweight, human-written changelog format inspired by K
 
 ## Unreleased
 
+## 1.4.0 - 2026-04-20
+
 - Add release packaging for `meshy-prompt-studio-<version>.zip`.
 - Add project release/security checks.
 - Add Meshy API test-mode documentation and CLI support.

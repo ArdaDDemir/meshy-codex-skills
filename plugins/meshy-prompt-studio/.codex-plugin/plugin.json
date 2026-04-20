@@ -1,6 +1,6 @@
 {
   "name": "meshy-prompt-studio",
-  "version": "1.3.0",
+  "version": "1.4.0",
   "description": "Codex plugin for safe Meshy setup, dry-run planning, asset packs, and recovery-aware follow-up workflows.",
   "author": {
     "name": "Arda Demir",
