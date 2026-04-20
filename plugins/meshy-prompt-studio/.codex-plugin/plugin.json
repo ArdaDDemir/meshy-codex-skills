@@ -41,8 +41,8 @@
       "Plan a low-poly prop asset pack and show estimated credits before spend.",
       "If I ask for texture after a generated model, treat it as a follow-up on that asset."
     ],
-    "composerIcon": "./assets/meshy-prompt-studio.svg",
-    "logo": "./assets/meshy-prompt-studio.svg",
+    "composerIcon": "./assets/icon.png",
+    "logo": "./assets/logo.png",
     "screenshots": [
       "./assets/screenshot-first-run.png",
       "./assets/screenshot-dry-run.png",
