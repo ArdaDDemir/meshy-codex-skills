@@ -1,7 +1,7 @@
 {
   "name": "meshy-prompt-studio",
-  "version": "1.0.0",
-  "description": "Codex plugin for creating production-ready Meshy prompts and 3D asset workflow guidance.",
+  "version": "1.1.0",
+  "description": "Codex plugin for creating Meshy prompts and running Meshy API workflows from Codex.",
   "author": {
     "name": "Arda Demir",
     "url": "https://github.com/ArdaDDemir"
@@ -11,6 +11,8 @@
   "license": "MIT",
   "keywords": [
     "meshy",
+    "mcp",
+    "api",
     "3d-assets",
     "prompting",
     "text-to-3d",
@@ -19,21 +21,23 @@
     "3d-printing"
   ],
   "skills": "./skills/",
+  "mcpServers": "./.mcp.json",
   "interface": {
     "displayName": "Meshy Prompt Studio",
-    "shortDescription": "Create Meshy prompts for production-ready 3D assets.",
-    "longDescription": "Meshy Prompt Studio helps Codex write focused Meshy prompts and workflow guidance for Text to 3D, Image to 3D, textures, game assets, riggable characters, 3D print models, exports, and troubleshooting.",
+    "shortDescription": "Create Meshy prompts and run Meshy API tasks from Codex.",
+    "longDescription": "Meshy Prompt Studio helps Codex write focused Meshy prompts and directly run Meshy API workflows for Text to 3D, Image to 3D, textures, remeshing, rigging, animations, exports, and troubleshooting.",
     "developerName": "ArdaDDemir",
     "category": "Productivity",
     "capabilities": [
       "Interactive",
+      "Read",
       "Write"
     ],
     "websiteURL": "https://github.com/ArdaDDemir/meshy-codex-skills",
     "defaultPrompt": [
-      "Create a Meshy prompt pack for a riggable game character.",
-      "Write Image to 3D and texture prompts for this prop.",
-      "Turn this concept into separate game and 3D print prompts."
+      "Use Meshy to create a low-poly game prop and download the GLB.",
+      "Check my Meshy API balance.",
+      "Write Image to 3D and texture prompts for this prop."
     ],
     "brandColor": "#2F80ED"
   }

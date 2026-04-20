@@ -20,6 +20,10 @@ Use this checklist before writing any Meshy prompt or Meshy workflow answer:
 - Preserve text/logo workflows: remove text before mesh generation; add text or logos during texture when possible.
 - Avoid unsupported or risky prompt structures unless the user explicitly requests them.
 
+## Direct Meshy API Execution
+
+When Meshy API MCP tools are available and the user asks Codex to create, check, download, remesh, retexture, rig, or animate a Meshy asset directly, use the Meshy MCP tools instead of stopping at prompt text. Keep API keys out of responses and files. Check authentication or balance before diagnosing API failures. For explicit generation requests, submit the task, poll until a terminal status when practical, and return task IDs, status, model URLs, and downloaded file paths. Do not create paid tasks when the user only asks for a prompt or workflow plan.
+
 ## Response Shape
 
 Prefer this compact structure and omit sections that do not apply:

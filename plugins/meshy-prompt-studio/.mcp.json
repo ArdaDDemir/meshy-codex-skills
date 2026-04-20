@@ -1,0 +1,11 @@
+{
+  "mcpServers": {
+    "meshy-api": {
+      "command": "python",
+      "args": [
+        "./mcp/meshy_mcp_server.py"
+      ],
+      "note": "Local Meshy API MCP server. Configure a Meshy API key with the meshy_configure_api_key tool or the MESHY_API_KEY environment variable."
+    }
+  }
+}

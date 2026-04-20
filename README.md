@@ -2,6 +2,8 @@
 
 Codex skills for creating production-ready Meshy prompts and workflow guidance for 3D asset generation.
 
+The repository also includes **Meshy Prompt Studio**, a Codex plugin that can call the Meshy API through a local MCP server.
+
 ## Skills
 
 ### write-meshy-prompts
@@ -31,7 +33,9 @@ Restart Codex after installing so the new skill is discovered.
 
 This repository also publishes a Codex plugin named **Meshy Prompt Studio**.
 
-The plugin bundles the same `write-meshy-prompts` skill inside a plugin package so Codex plugin tooling can discover it from:
+The plugin bundles the same `write-meshy-prompts` skill and a local Meshy API MCP server so Codex can write prompts, create Meshy tasks, poll task status, and download generated assets.
+
+The plugin manifest is:
 
 ```text
 plugins/meshy-prompt-studio/.codex-plugin/plugin.json
@@ -43,10 +47,40 @@ The repository marketplace entry is:
 .agents/plugins/marketplace.json
 ```
 
-After installing the plugin in Codex, use the bundled skill with:
+The MCP server is declared in:
 
 ```text
-Use $write-meshy-prompts to create a Meshy prompt pack for a riggable game character.
+plugins/meshy-prompt-studio/.mcp.json
+```
+
+After installing the plugin in Codex, configure authentication with either:
+
+```text
+Use the Meshy API MCP tool to configure my Meshy API key.
+```
+
+or set `MESHY_API_KEY` in the local environment before starting Codex.
+
+The MCP server stores configured API keys outside the repository:
+
+```text
+%APPDATA%/meshy-prompt-studio/credentials.json
+```
+
+on Windows, or:
+
+```text
+~/.config/meshy-prompt-studio/credentials.json
+```
+
+on macOS/Linux.
+
+Do not commit API keys. The repository does not include any Meshy API credentials.
+
+After authentication, use the plugin with:
+
+```text
+Use Meshy to create a low-poly treasure chest and download the GLB.
 ```
 
 Direct plugin source:
@@ -81,11 +115,16 @@ skills/
 plugins/
   meshy-prompt-studio/
     .codex-plugin/plugin.json
+    .mcp.json
     README.md
     LICENSE.txt
+    mcp/meshy_mcp_server.py
     skills/write-meshy-prompts/
 .agents/
   plugins/marketplace.json
+docs/
+  superpowers/specs/
+tests/
 ```
 
 ## Notes
