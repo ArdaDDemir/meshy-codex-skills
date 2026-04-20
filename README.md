@@ -27,6 +27,34 @@ $skill-installer install https://github.com/ArdaDDemir/meshy-codex-skills/tree/m
 
 Restart Codex after installing so the new skill is discovered.
 
+## Plugin
+
+This repository also publishes a Codex plugin named **Meshy Prompt Studio**.
+
+The plugin bundles the same `write-meshy-prompts` skill inside a plugin package so Codex plugin tooling can discover it from:
+
+```text
+plugins/meshy-prompt-studio/.codex-plugin/plugin.json
+```
+
+The repository marketplace entry is:
+
+```text
+.agents/plugins/marketplace.json
+```
+
+After installing the plugin in Codex, use the bundled skill with:
+
+```text
+Use $write-meshy-prompts to create a Meshy prompt pack for a riggable game character.
+```
+
+Direct plugin source:
+
+```text
+https://github.com/ArdaDDemir/meshy-codex-skills/tree/main/plugins/meshy-prompt-studio
+```
+
 ## Example Prompts
 
 ```text
@@ -50,6 +78,14 @@ skills/
     agents/openai.yaml
     references/meshy-prompt-master-guide.md
     LICENSE.txt
+plugins/
+  meshy-prompt-studio/
+    .codex-plugin/plugin.json
+    README.md
+    LICENSE.txt
+    skills/write-meshy-prompts/
+.agents/
+  plugins/marketplace.json
 ```
 
 ## Notes

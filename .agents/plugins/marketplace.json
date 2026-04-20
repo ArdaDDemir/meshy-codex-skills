@@ -1,0 +1,20 @@
+{
+  "name": "meshy-codex-skills",
+  "interface": {
+    "displayName": "Meshy Codex Skills"
+  },
+  "plugins": [
+    {
+      "name": "meshy-prompt-studio",
+      "source": {
+        "source": "local",
+        "path": "./plugins/meshy-prompt-studio"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Productivity"
+    }
+  ]
+}

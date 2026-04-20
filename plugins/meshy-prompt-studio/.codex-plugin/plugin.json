@@ -1,0 +1,40 @@
+{
+  "name": "meshy-prompt-studio",
+  "version": "1.0.0",
+  "description": "Codex plugin for creating production-ready Meshy prompts and 3D asset workflow guidance.",
+  "author": {
+    "name": "Arda Demir",
+    "url": "https://github.com/ArdaDDemir"
+  },
+  "homepage": "https://github.com/ArdaDDemir/meshy-codex-skills#plugin",
+  "repository": "https://github.com/ArdaDDemir/meshy-codex-skills",
+  "license": "MIT",
+  "keywords": [
+    "meshy",
+    "3d-assets",
+    "prompting",
+    "text-to-3d",
+    "image-to-3d",
+    "game-assets",
+    "3d-printing"
+  ],
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "Meshy Prompt Studio",
+    "shortDescription": "Create Meshy prompts for production-ready 3D assets.",
+    "longDescription": "Meshy Prompt Studio helps Codex write focused Meshy prompts and workflow guidance for Text to 3D, Image to 3D, textures, game assets, riggable characters, 3D print models, exports, and troubleshooting.",
+    "developerName": "ArdaDDemir",
+    "category": "Productivity",
+    "capabilities": [
+      "Interactive",
+      "Write"
+    ],
+    "websiteURL": "https://github.com/ArdaDDemir/meshy-codex-skills",
+    "defaultPrompt": [
+      "Create a Meshy prompt pack for a riggable game character.",
+      "Write Image to 3D and texture prompts for this prop.",
+      "Turn this concept into separate game and 3D print prompts."
+    ],
+    "brandColor": "#2F80ED"
+  }
+}
