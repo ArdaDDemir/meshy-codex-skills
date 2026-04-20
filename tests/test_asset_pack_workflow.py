@@ -113,7 +113,28 @@ class AssetPackWorkflowTests(unittest.TestCase):
         self.assertEqual(result["estimated_credits"], 30)
         self.assertEqual(result["preview_payload"]["pose_mode"], "a-pose")
         self.assertEqual(result["preview_payload"]["target_formats"], ["glb", "fbx"])
+        self.assertIn("A-pose", result["preview_payload"]["prompt"])
         self.assertIn("rig-friendly", result["preset_notes"][0].lower())
+        self.assertEqual(transport.requests, [])
+
+    def test_riggable_asset_pack_t_pose_override_updates_prompt_suffix(self):
+        transport = FakeTransport()
+        client = self.module.MeshyClient(api_key="msy_test_key", transport=transport)
+
+        result = client.create_text_to_3d_asset_pack(
+            {
+                "asset_name": "Teacher T Pose",
+                "prompt": "friendly classroom teacher character",
+                "preset": "riggable_character",
+                "pose_mode": "T-pose",
+                "dry_run": True,
+            }
+        )
+
+        self.assertTrue(result["dry_run"])
+        self.assertEqual(result["preview_payload"]["pose_mode"], "t-pose")
+        self.assertIn("T-pose", result["preview_payload"]["prompt"])
+        self.assertNotIn("A-pose", result["preview_payload"]["prompt"])
         self.assertEqual(transport.requests, [])
 
     def test_text_to_3d_other_model_cost_uses_april_2026_pricing(self):

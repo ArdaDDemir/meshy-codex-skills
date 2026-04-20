@@ -46,7 +46,7 @@ PRESETS: dict[str, WorkflowPreset] = {
         target_formats=["glb", "fbx"],
         refine_defaults={"enable_pbr": True},
         prompt_suffix=(
-            "Rig-friendly humanoid character in a clean A-pose, arms separated from the torso, "
+            "Rig-friendly humanoid character in a clean {pose_label}, arms separated from the torso, "
             "visible hands, symmetrical body, neutral expression, and deformation-friendly clothing."
         ),
         notes=[
@@ -79,8 +79,20 @@ def get_preset(value: Any) -> WorkflowPreset:
     return PRESETS[normalize_preset_name(value)]
 
 
-def enrich_prompt(prompt: str, preset: WorkflowPreset) -> str:
+def enrich_prompt(prompt: str, preset: WorkflowPreset, *, pose_mode: Any | None = None) -> str:
     prompt = prompt.strip()
     if not preset.prompt_suffix:
         return prompt
-    return f"{prompt}. {preset.prompt_suffix}"
+    suffix = preset.prompt_suffix
+    if "{pose_label}" in suffix:
+        suffix = suffix.format(pose_label=pose_label(pose_mode or preset.preview_defaults.get("pose_mode")))
+    return f"{prompt}. {suffix}"
+
+
+def pose_label(value: Any | None) -> str:
+    pose_mode = str(value or "").strip().lower()
+    if pose_mode == "t-pose":
+        return "T-pose"
+    if pose_mode == "a-pose":
+        return "A-pose"
+    return "neutral rigging pose"

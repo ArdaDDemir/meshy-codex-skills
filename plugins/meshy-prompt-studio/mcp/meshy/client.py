@@ -69,7 +69,7 @@ class MeshyHttpTransport:
         headers = {
             "Authorization": f"Bearer {api_key}",
             "Accept": "application/json",
-            "User-Agent": "meshy-prompt-studio/1.2.0",
+            "User-Agent": "meshy-prompt-studio/1.3.0",
         }
         if payload is not None:
             data = json.dumps(payload).encode("utf-8")

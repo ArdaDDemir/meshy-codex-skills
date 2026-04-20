@@ -1,91 +1,170 @@
 # Meshy Prompt Studio
 
-Meshy Prompt Studio is a Codex plugin that bundles the `write-meshy-prompts` skill and a local Meshy API MCP server.
+Meshy Prompt Studio is the plugin package in this repository. It bundles the `write-meshy-prompts` skill with a local Meshy API MCP server so Codex can write prompts, create Meshy tasks, poll status, download files, and build local Text to 3D asset packs.
 
-It helps Codex create production-ready Meshy prompts, submit Meshy API tasks, poll task status, download generated assets, and produce local Text to 3D asset packs without leaving the Codex workflow.
+## What It Includes
 
-Use it for:
-
-- Text to 3D model prompts
-- Image to 3D reference prompts
-- Texture and retexture prompts
-- Game-ready static props
-- Riggable humanoid characters
-- 3D printable models
-- Export and production handoff guidance
-- Troubleshooting Meshy generation results
-- Direct Meshy API task creation through MCP
-- One-command Text to 3D asset packs with manifests and run history
+```text
+.codex-plugin/plugin.json
+.mcp.json
+mcp/meshy_mcp_server.py
+mcp/meshy/
+skills/write-meshy-prompts/
+LICENSE.txt
+README.md
+```
 
 ## Install
 
-The plugin manifest lives at:
+Install this plugin from the repository marketplace entry or directly from this folder:
+
+```text
+plugins/meshy-prompt-studio/
+```
+
+Plugin metadata:
 
 ```text
 plugins/meshy-prompt-studio/.codex-plugin/plugin.json
 ```
 
-The repository marketplace entry lives at:
-
-```text
-.agents/plugins/marketplace.json
-```
-
-The MCP server config lives at:
+MCP server declaration:
 
 ```text
 plugins/meshy-prompt-studio/.mcp.json
 ```
 
-Codex plugin tooling can install this plugin from the repository marketplace entry. The plugin exposes the bundled `write-meshy-prompts` skill and a local MCP server named `meshy-api` after installation.
+After installation, Codex should expose:
+
+- The bundled `write-meshy-prompts` skill.
+- A local MCP server named `meshy-api`.
+- Meshy tools such as `meshy_get_balance`, `meshy_create_text_to_3d_preview`, and `meshy_create_text_to_3d_asset_pack`.
+
+### Codex App Local Setup
+
+For local Codex App testing, there are two useful checks:
+
+1. Plugin package discovery:
+
+```text
+plugins/meshy-prompt-studio/.codex-plugin/plugin.json
+```
+
+2. MCP server discovery:
+
+```text
+plugins/meshy-prompt-studio/.mcp.json
+```
+
+The Codex App UI may cache plugin discovery. If the skill appears but the plugin card does not, fully restart Codex and verify the MCP server directly:
+
+```bash
+python plugins/meshy-prompt-studio/mcp/meshy_mcp_server.py --print-tools
+```
+
+If needed, add the MCP server directly to Codex config with an absolute path:
+
+```toml
+[mcp_servers.meshy-api]
+command = "python"
+args = ["C:\\path\\to\\meshy-codex-skills\\plugins\\meshy-prompt-studio\\mcp\\meshy_mcp_server.py"]
+```
+
+Use your own local repository path. After editing config, restart Codex before checking the UI again.
+
+## Requirements
+
+- Python 3.10 or newer.
+- No third-party Python runtime packages.
+- A Meshy API key for live API calls.
 
 ## Authentication
 
-Meshy uses API keys. The MCP server sends the key with:
+Meshy API access requires a Meshy API key. Prompt-only skill usage works without a key, but the MCP API tools cannot check balance, create tasks, poll tasks, download assets, or run asset-pack workflows until a key is configured. Local schema checks such as `--print-tools` do not need a key.
 
-```text
-Authorization: Bearer <MESHY_API_KEY>
+Use one of these approaches:
+
+```powershell
+$env:MESHY_API_KEY = "msy_your_key_here"
 ```
 
-Configure the key inside Codex with the `meshy_configure_api_key` MCP tool, or set `MESHY_API_KEY` in the local environment before starting Codex.
-
-The MCP server stores configured keys outside this repository:
-
-```text
-%APPDATA%/meshy-prompt-studio/credentials.json
+```bash
+export MESHY_API_KEY="msy_your_key_here"
 ```
 
-on Windows, or:
+Or configure the key through Codex:
 
 ```text
-~/.config/meshy-prompt-studio/credentials.json
+Use the Meshy API MCP tool to configure my Meshy API key.
 ```
 
-on macOS/Linux.
+Or configure it through the local CLI without committing secrets:
 
-Never commit Meshy API keys. This plugin does not store credentials in `.mcp.json`, `plugin.json`, README files, tests, or source-controlled files.
-
-## Usage
-
-```text
-Use $write-meshy-prompts to create a Meshy prompt pack for a riggable game character.
+```bash
+python plugins/meshy-prompt-studio/mcp/meshy_mcp_server.py --configure-api-key-stdin
 ```
 
-```text
-Use $write-meshy-prompts to write Image to 3D and texture prompts for this prop.
+Paste the key into stdin when prompted or when piping input. The response does not echo the key.
+
+Configured keys are stored outside the repository:
+
+- Windows: `%APPDATA%/meshy-prompt-studio/credentials.json`
+- macOS/Linux: `~/.config/meshy-prompt-studio/credentials.json`
+
+The configure tool never echoes the API key back in its response.
+
+## Quick Checks
+
+Print MCP tool schemas:
+
+```bash
+python plugins/meshy-prompt-studio/mcp/meshy_mcp_server.py --print-tools
 ```
 
-```text
-Use $write-meshy-prompts to turn this concept into separate game and 3D print prompts.
+Check auth:
+
+```bash
+python plugins/meshy-prompt-studio/mcp/meshy_mcp_server.py --check-auth
 ```
 
-```text
-Use Meshy to create a low-poly treasure chest asset pack.
+Check balance:
+
+```bash
+python plugins/meshy-prompt-studio/mcp/meshy_mcp_server.py --balance
 ```
 
-```text
-Use Meshy to check my API balance.
+## Asset Pack Workflow
+
+Use `meshy_create_text_to_3d_asset_pack` when Codex should run the full Text to 3D loop: preview, wait, optional refine, downloads, manifest, prompt file, and history.
+
+Dry-run from the CLI:
+
+```bash
+python plugins/meshy-prompt-studio/mcp/meshy_mcp_server.py \
+  --create-text-asset examples/prompts/treasure-chest.prompt.txt \
+  --name treasure-chest \
+  --preset low_poly_asset \
+  --dry-run
 ```
+
+Create after approving spend:
+
+```bash
+python plugins/meshy-prompt-studio/mcp/meshy_mcp_server.py \
+  --create-text-asset examples/prompts/treasure-chest.prompt.txt \
+  --name treasure-chest \
+  --preset low_poly_asset \
+  --confirm-spend
+```
+
+Supported presets:
+
+- `game_prop`
+- `low_poly_asset`
+- `riggable_character`
+- `printable_model`
+
+See [../../docs/asset-pack-workflow.md](../../docs/asset-pack-workflow.md) for budget guards, output layout, and detailed CLI examples.
 
 ## MCP Tools
 
@@ -106,132 +185,28 @@ Use Meshy to check my API balance.
 - `meshy_rig_character`
 - `meshy_animate_character`
 
-## Text to 3D Asset Packs
-
-Use `meshy_create_text_to_3d_asset_pack` when Codex should run the full production loop:
-
-1. Create a Text to 3D preview task.
-2. Wait until the preview reaches a terminal status.
-3. Download preview thumbnail and preview GLB when available.
-4. Create and wait for the refine task when `refine=true`.
-5. Download the final model, thumbnail, and texture maps when available.
-6. Write `manifest.json`, `prompt.md`, and append `.meshy/history.jsonl`.
-
-Supported presets:
-
-- `game_prop`: GLB output, refine on, PBR textures on, no pose mode.
-- `low_poly_asset`: `model_type=lowpoly`, GLB output, refine on.
-- `riggable_character`: `pose_mode=a-pose`, GLB and FBX outputs, rig-friendly prompt hints.
-- `printable_model`: STL and 3MF outputs, print-safe geometry hints.
-
-Default budget guards:
-
-- `max_spend=35`
-- `min_balance=0`
-- `confirm_spend=false`
-- `dry_run=false`
-- `overwrite=false`
-
-Real generation, refine, remesh, rigging, animation, and retexture calls can spend Meshy API credits. The asset pack workflow reports the estimated cost first and requires `confirm_spend=true` before it creates paid Meshy tasks. Use `dry_run=true` to inspect planned payloads and estimated credits before creating paid generation tasks.
-
-API cost reference used by the plugin as of 2026-04-20:
+## Example Prompts
 
 ```text
-Text to 3D preview, Meshy 6 models: 20 credits
-Text to 3D preview, other models: 10 credits
-Text to 3D refine: 10 credits
-Image to 3D, Meshy 6 models: 20 credits without texture, 30 credits with texture
-Image to 3D, other models: 5 credits without texture, 15 credits with texture
-Multi Image to 3D: 5 credits without texture, 15 credits with texture
-Retexture: 10 credits
-Remesh: 5 credits
-Auto-Rigging: 5 credits
-Animation: 3 credits
-```
-
-Asset pack structure:
-
-```text
-outputs/<asset-name>/
-  model.glb
-  preview.glb
-  preview.png
-  textures/
-    base_color.png
-    normal.png
-    roughness.png
-    metallic.png
-  manifest.json
-  prompt.md
-```
-
-`manifest.json` includes task IDs, prompt data, normalized API parameters, model URLs, texture URLs, output file paths, file sizes, balance before/after, and credits spent.
-
-Examples:
-
-```text
-Use Meshy to create a Text to 3D asset pack named teacher-model with this prompt: friendly classroom teacher character, clean stylized proportions, warm cardigan, simple readable face. Use preset riggable_character. Tell me the estimated credit cost before spending credits.
+Use $write-meshy-prompts to create a Meshy prompt pack for a riggable game character.
 ```
 
 ```text
-Use Meshy to create a low-poly asset pack named treasure-chest with this prompt: chunky low-poly wooden treasure chest with metal bands, readable silhouette, game-ready proportions. Use preset low_poly_asset.
+Use Meshy to create a low-poly treasure chest asset pack.
 ```
 
 ```text
-Use Meshy to create a printable asset pack named desk-organizer with this prompt: compact 3D printable desk organizer with rounded slots, stable base, no thin fragile parts. Use preset printable_model.
+Use Meshy to check my API balance.
 ```
 
-## Local CLI
+## Safety Notes
 
-Configure an API key from stdin:
-
-```text
-python plugins/meshy-prompt-studio/mcp/meshy_mcp_server.py --configure-api-key-stdin
-```
-
-Check authentication without creating a paid generation task:
-
-```text
-python plugins/meshy-prompt-studio/mcp/meshy_mcp_server.py --check-auth
-```
-
-Check balance:
-
-```text
-python plugins/meshy-prompt-studio/mcp/meshy_mcp_server.py --balance
-```
-
-Create an asset pack from a prompt file:
-
-```text
-python plugins/meshy-prompt-studio/mcp/meshy_mcp_server.py --create-text-asset prompt.txt --name teacher --preset riggable_character --confirm-spend
-```
-
-Dry-run a planned asset pack without a paid generation request:
-
-```text
-python plugins/meshy-prompt-studio/mcp/meshy_mcp_server.py --create-text-asset prompt.txt --name crate --preset low_poly_asset --dry-run
-```
-
-Wait for, download, and list tasks:
-
-```text
-python plugins/meshy-prompt-studio/mcp/meshy_mcp_server.py --wait TASK_ID --type text-to-3d
-python plugins/meshy-prompt-studio/mcp/meshy_mcp_server.py --download TASK_ID --type text-to-3d --out outputs/teacher
-python plugins/meshy-prompt-studio/mcp/meshy_mcp_server.py --list-recent text-to-3d
-```
-
-## Package Contents
-
-```text
-.codex-plugin/plugin.json
-.mcp.json
-mcp/meshy_mcp_server.py
-mcp/meshy/
-skills/write-meshy-prompts/
-LICENSE.txt
-README.md
-```
+- Prompt-only usage does not spend credits.
+- Live Meshy API calls can spend credits.
+- The asset-pack workflow requires `confirm_spend=true` before paid task creation.
+- Test in this order: `--print-tools`, `--check-auth`, `--balance`, asset-pack `--dry-run`, then `--confirm-spend` only after reviewing the plan.
+- If `pose_mode` is set to `t-pose`, the `riggable_character` preset keeps the enriched prompt consistent with T-pose.
+- Do not commit credentials, generated assets, `.meshy/`, `outputs/`, or `meshy-downloads/`.
 
 ## License
 

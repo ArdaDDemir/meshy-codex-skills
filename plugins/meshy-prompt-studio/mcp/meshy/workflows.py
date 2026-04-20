@@ -189,9 +189,7 @@ def build_text_to_3d_asset_pack_plan(arguments: dict[str, Any]) -> dict[str, Any
         "glb"
     ]
 
-    enriched_prompt = enrich_prompt(prompt, preset)
     preview_payload: dict[str, Any] = {
-        "prompt": enriched_prompt,
         "target_formats": target_formats,
         **preset.preview_defaults,
     }
@@ -211,6 +209,10 @@ def build_text_to_3d_asset_pack_plan(arguments: dict[str, Any]) -> dict[str, Any
     ):
         if key in arguments and arguments[key] is not None:
             preview_payload[key] = arguments[key]
+
+    preview_payload = normalize_text_to_3d_preview_payload(preview_payload)
+    enriched_prompt = enrich_prompt(prompt, preset, pose_mode=preview_payload.get("pose_mode"))
+    preview_payload["prompt"] = enriched_prompt
 
     refine_payload: dict[str, Any] = {
         "target_formats": target_formats,

@@ -1,0 +1,5 @@
+# Meshy Prompt Studio currently has no third-party runtime dependencies.
+# The MCP server and CLI use only the Python standard library.
+#
+# This file is intentionally present so setup commands can stay stable:
+#   python -m pip install -r requirements.txt

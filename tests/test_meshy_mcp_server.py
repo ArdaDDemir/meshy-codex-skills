@@ -156,7 +156,7 @@ class MeshyMcpServerTests(unittest.TestCase):
             )
 
             self.assertEqual(output_path.read_bytes(), b"glb-bytes")
-            self.assertEqual(result["path"], str(output_path))
+            self.assertTrue(Path(result["path"]).samefile(output_path))
             with self.assertRaises(self.module.MeshyError):
                 client.download_asset(
                     {"url": "https://assets.meshy.ai/task/model.glb", "output_path": str(output_path)}

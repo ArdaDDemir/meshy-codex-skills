@@ -1,6 +1,6 @@
 {
   "name": "meshy-prompt-studio",
-  "version": "1.2.0",
+  "version": "1.3.0",
   "description": "Codex plugin for creating Meshy prompts and one-command Meshy API asset packs from Codex.",
   "author": {
     "name": "Arda Demir",
