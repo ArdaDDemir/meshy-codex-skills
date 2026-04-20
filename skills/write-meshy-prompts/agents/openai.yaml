@@ -1,0 +1,6 @@
+interface:
+  display_name: "Write Meshy Prompts"
+  short_description: "Production Meshy prompts for 3D assets"
+  default_prompt: "Use $write-meshy-prompts to create production-ready Meshy prompts and handoff guidance for this 3D asset request."
+policy:
+  allow_implicit_invocation: true
