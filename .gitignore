@@ -4,3 +4,6 @@ Thumbs.db
 *.bak
 __pycache__/
 *.pyc
+.meshy/
+outputs/
+meshy-downloads/

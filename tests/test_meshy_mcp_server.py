@@ -3,15 +3,19 @@ import importlib.util
 import json
 import os
 from pathlib import Path
+import sys
 from tempfile import TemporaryDirectory
 import unittest
 
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 SERVER_PATH = REPO_ROOT / "plugins" / "meshy-prompt-studio" / "mcp" / "meshy_mcp_server.py"
+MCP_ROOT = SERVER_PATH.parent
 
 
 def load_server_module():
+    if str(MCP_ROOT) not in sys.path:
+        sys.path.insert(0, str(MCP_ROOT))
     spec = importlib.util.spec_from_file_location("meshy_mcp_server", SERVER_PATH)
     module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)

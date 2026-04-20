@@ -22,7 +22,7 @@ Use this checklist before writing any Meshy prompt or Meshy workflow answer:
 
 ## Direct Meshy API Execution
 
-When Meshy API MCP tools are available and the user asks Codex to create, check, download, remesh, retexture, rig, or animate a Meshy asset directly, use the Meshy MCP tools instead of stopping at prompt text. Keep API keys out of responses and files. Check authentication or balance before diagnosing API failures. For explicit generation requests, submit the task, poll until a terminal status when practical, and return task IDs, status, model URLs, and downloaded file paths. Do not create paid tasks when the user only asks for a prompt or workflow plan.
+When Meshy API MCP tools are available and the user asks Codex to create, check, download, remesh, retexture, rig, or animate a Meshy asset directly, use the Meshy MCP tools instead of stopping at prompt text. Prefer `meshy_create_text_to_3d_asset_pack` for Text to 3D requests that should create, wait, refine, download, and package an asset in one command. Before paid generation, report the estimated credit cost and continue only after user approval or an explicit `confirm_spend=true`. Keep API keys out of responses and files. Check authentication or balance before diagnosing API failures. For explicit generation requests, submit the task, poll until a terminal status when practical, and return task IDs, status, model URLs, downloaded file paths, and credit usage when available. Do not create paid tasks when the user only asks for a prompt or workflow plan.
 
 ## Response Shape
 
