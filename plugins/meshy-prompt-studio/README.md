@@ -133,6 +133,14 @@ Check balance:
 python plugins/meshy-prompt-studio/mcp/meshy_mcp_server.py --balance
 ```
 
+Check the API integration with Meshy test mode:
+
+```bash
+python plugins/meshy-prompt-studio/mcp/meshy_mcp_server.py --test-mode --check-auth
+```
+
+Test mode verifies request handling and sample responses. It is not a substitute for real generation with your own Meshy API key.
+
 ## Asset Pack Workflow
 
 Use `meshy_create_text_to_3d_asset_pack` when Codex should run the full Text to 3D loop: preview, wait, optional refine, downloads, manifest, prompt file, and history.
@@ -166,6 +174,15 @@ Supported presets:
 
 See [../../docs/asset-pack-workflow.md](../../docs/asset-pack-workflow.md) for budget guards, output layout, and detailed CLI examples.
 
+Local history helpers:
+
+```bash
+python plugins/meshy-prompt-studio/mcp/meshy_mcp_server.py --history
+python plugins/meshy-prompt-studio/mcp/meshy_mcp_server.py --resume treasure-chest
+python plugins/meshy-prompt-studio/mcp/meshy_mcp_server.py --download-existing TASK_ID --type text-to-3d --out outputs/teacher
+python plugins/meshy-prompt-studio/mcp/meshy_mcp_server.py --open-manifest treasure-chest
+```
+
 ## MCP Tools
 
 - `meshy_configure_api_key`
@@ -185,18 +202,28 @@ See [../../docs/asset-pack-workflow.md](../../docs/asset-pack-workflow.md) for b
 - `meshy_rig_character`
 - `meshy_animate_character`
 
+## Release Package
+
+Build a distributable plugin zip from the repository root:
+
+```bash
+python scripts/package_plugin.py
+```
+
+Tagged GitHub releases upload `meshy-prompt-studio-<version>.zip` through CI.
+
 ## Example Prompts
 
 ```text
-Use $write-meshy-prompts to create a Meshy prompt pack for a riggable game character.
+Run the safe Meshy first-run flow: print tools, test mode auth, then a dry-run plan.
 ```
 
 ```text
-Use Meshy to create a low-poly treasure chest asset pack.
+Create a dry-run low-poly prop asset pack and show estimated credits before any paid task.
 ```
 
 ```text
-Use Meshy to check my API balance.
+If I ask for texture after a generated model, continue from that asset instead of creating a new mesh.
 ```
 
 ## Safety Notes
@@ -206,6 +233,9 @@ Use Meshy to check my API balance.
 - The asset-pack workflow requires `confirm_spend=true` before paid task creation.
 - Test in this order: `--print-tools`, `--check-auth`, `--balance`, asset-pack `--dry-run`, then `--confirm-spend` only after reviewing the plan.
 - If `pose_mode` is set to `t-pose`, the `riggable_character` preset keeps the enriched prompt consistent with T-pose.
+- Meshy test mode is for integration testing only; use your own Meshy API key for real generation.
+- Texture follow-up requests should stay attached to the active asset when possible; do not create a fresh mesh unless the user changes targets.
+- When front view alone is not enough, prefer 3 to 4 clean reference angles and `meshy_create_multi_image_to_3d`.
 - Do not commit credentials, generated assets, `.meshy/`, `outputs/`, or `meshy-downloads/`.
 
 ## License

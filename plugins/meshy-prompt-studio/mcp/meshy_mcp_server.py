@@ -63,6 +63,10 @@ def dispatch_tool(name: str, arguments: dict[str, Any]) -> dict[str, Any]:
     try:
         if name == "meshy_configure_api_key":
             return tool_content(configure_api_key(arguments))
+        if name == "meshy_create_text_to_3d_asset_pack" and arguments.get("dry_run"):
+            from meshy.workflows import dry_run_text_to_3d_asset_pack
+
+            return tool_content(dry_run_text_to_3d_asset_pack(arguments))
 
         client = client_from_config()
         handlers = {

@@ -81,6 +81,18 @@ class MeshyMcpServerTests(unittest.TestCase):
 
             self.assertEqual(self.module.resolve_api_key(), "msy_from_env")
 
+    def test_default_credential_path_resolves_outside_repo(self):
+        os.environ.pop("MESHY_CREDENTIALS_PATH", None)
+        os.environ.pop("MESHY_API_KEY", None)
+        with TemporaryDirectory() as temp_dir:
+            os.environ["APPDATA"] = temp_dir
+
+            resolved = self.module.credential_path().resolve()
+
+        self.assertFalse(resolved.is_relative_to(REPO_ROOT.resolve()))
+        self.assertEqual(resolved.name, "credentials.json")
+        self.assertIn("meshy-prompt-studio", str(resolved))
+
     def test_get_balance_calls_meshy_balance_endpoint(self):
         transport = FakeTransport([{"balance": 123}])
         client = self.module.MeshyClient(api_key="msy_test_key", transport=transport)

@@ -27,20 +27,7 @@ from .validation import (
 def create_text_to_3d_asset_pack(client: Any, arguments: dict[str, Any]) -> dict[str, Any]:
     plan = build_text_to_3d_asset_pack_plan(arguments)
     if plan["dry_run"]:
-        return {
-            "dry_run": True,
-            "asset_name": plan["asset_name"],
-            "asset_slug": plan["asset_slug"],
-            "asset_dir": str(plan["asset_dir"]),
-            "estimated_credits": plan["estimated_credits"],
-            "costs_as_of": MESHY_COSTS_AS_OF,
-            "cost_table": MESHY_API_COSTS,
-            "preview_payload": plan["preview_payload"],
-            "refine_payload": plan["refine_payload"],
-            "preset": plan["preset"].name,
-            "preset_notes": plan["preset"].notes,
-            "planned_steps": plan["planned_steps"],
-        }
+        return dry_run_text_to_3d_asset_pack(arguments)
 
     asset_dir: Path = plan["asset_dir"]
     overwrite = plan["overwrite"]
@@ -114,6 +101,18 @@ def create_text_to_3d_asset_pack(client: Any, arguments: dict[str, Any]) -> dict
     elif final_status == "SUCCEEDED":
         promote_preview_model(output_files)
 
+    latest_task_id = refine_task_id or preview_task_id
+    failure_stage = infer_failure_stage(preview_task, refine_task)
+    task_error = extract_task_error(refine_task if refine_task is not None else preview_task)
+    downloadable_assets = summarize_downloadable_assets(refine_task if refine_task is not None else preview_task)
+    recovery_hint = build_recovery_hint(
+        final_status=final_status,
+        failure_stage=failure_stage,
+        latest_task_id=latest_task_id,
+        downloadable_assets=downloadable_assets,
+        missing_optional_assets=missing_optional_assets,
+    )
+
     balance_after_payload = client.get_balance()
     balance_after = extract_balance_value(balance_after_payload)
     credits_spent = None
@@ -130,6 +129,11 @@ def create_text_to_3d_asset_pack(client: Any, arguments: dict[str, Any]) -> dict
         final_status=final_status,
         output_files=output_files,
         missing_optional_assets=missing_optional_assets,
+        latest_task_id=latest_task_id,
+        failure_stage=failure_stage,
+        task_error=task_error,
+        downloadable_assets=downloadable_assets,
+        recovery_hint=recovery_hint,
         balance_before=balance_before,
         balance_after=balance_after,
         credits_spent=credits_spent,
@@ -146,6 +150,11 @@ def create_text_to_3d_asset_pack(client: Any, arguments: dict[str, Any]) -> dict
         "status": final_status,
         "preview_task_id": preview_task_id,
         "refine_task_id": refine_task_id,
+        "latest_task_id": latest_task_id,
+        "manifest_path": str(asset_dir / "manifest.json"),
+        "failure_stage": failure_stage,
+        "recovery_hint": recovery_hint,
+        "task_error": task_error,
         "estimated_credits": plan["estimated_credits"],
         "costs_as_of": MESHY_COSTS_AS_OF,
         "credits_spent": credits_spent,
@@ -162,11 +171,16 @@ def create_text_to_3d_asset_pack(client: Any, arguments: dict[str, Any]) -> dict
         "status": final_status,
         "preview_task_id": preview_task_id,
         "refine_task_id": refine_task_id,
+        "latest_task_id": latest_task_id,
         "estimated_credits": plan["estimated_credits"],
         "costs_as_of": MESHY_COSTS_AS_OF,
         "credits_spent": credits_spent,
         "output_files": output_files,
         "missing_optional_assets": missing_optional_assets,
+        "failure_stage": failure_stage,
+        "task_error": task_error,
+        "downloadable_assets": downloadable_assets,
+        "recovery_hint": recovery_hint,
     }
 
 
@@ -280,6 +294,24 @@ def build_text_to_3d_asset_pack_plan(arguments: dict[str, Any]) -> dict[str, Any
     }
 
 
+def dry_run_text_to_3d_asset_pack(arguments: dict[str, Any]) -> dict[str, Any]:
+    plan = build_text_to_3d_asset_pack_plan(arguments | {"dry_run": True})
+    return {
+        "dry_run": True,
+        "asset_name": plan["asset_name"],
+        "asset_slug": plan["asset_slug"],
+        "asset_dir": str(plan["asset_dir"]),
+        "estimated_credits": plan["estimated_credits"],
+        "costs_as_of": MESHY_COSTS_AS_OF,
+        "cost_table": MESHY_API_COSTS,
+        "preview_payload": plan["preview_payload"],
+        "refine_payload": plan["refine_payload"],
+        "preset": plan["preset"].name,
+        "preset_notes": plan["preset"].notes,
+        "planned_steps": plan["planned_steps"],
+    }
+
+
 def download_preview_assets(
     client: Any,
     task: dict[str, Any],
@@ -359,6 +391,11 @@ def build_manifest(
     final_status: str,
     output_files: dict[str, Any],
     missing_optional_assets: list[str],
+    latest_task_id: str | None,
+    failure_stage: str | None,
+    task_error: dict[str, Any] | None,
+    downloadable_assets: dict[str, Any],
+    recovery_hint: str | None,
     balance_before: int | float | None,
     balance_after: int | float | None,
     credits_spent: int | float | None,
@@ -379,7 +416,11 @@ def build_manifest(
         "downloaded_at": utc_now(),
         "preview_task_id": preview_task_id,
         "refine_task_id": refine_task_id,
+        "latest_task_id": latest_task_id,
         "final_status": final_status,
+        "failure_stage": failure_stage,
+        "task_error": task_error,
+        "recovery_hint": recovery_hint,
         "selected_formats": plan["target_formats"],
         "estimated_credits": plan["estimated_credits"],
         "costs_as_of": MESHY_COSTS_AS_OF,
@@ -390,6 +431,7 @@ def build_manifest(
         "model_urls": model_urls,
         "thumbnail_url": thumbnail_url,
         "texture_urls": texture_urls,
+        "downloadable_assets": downloadable_assets,
         "output_files": output_files,
         "file_sizes": collect_file_sizes(output_files),
         "missing_optional_assets": sorted(set(missing_optional_assets)),
@@ -441,6 +483,75 @@ def task_status(task: Any) -> str:
     if isinstance(task, dict):
         return str(task.get("status", "UNKNOWN"))
     return "UNKNOWN"
+
+
+def infer_failure_stage(
+    preview_task: dict[str, Any] | list[Any] | None,
+    refine_task: dict[str, Any] | list[Any] | None,
+) -> str | None:
+    if isinstance(refine_task, dict) and task_status(refine_task) in {"FAILED", "CANCELED"}:
+        return "refine"
+    if isinstance(preview_task, dict) and task_status(preview_task) in {"FAILED", "CANCELED"}:
+        return "preview"
+    return None
+
+
+def extract_task_error(task: dict[str, Any] | list[Any] | None) -> dict[str, Any] | None:
+    if not isinstance(task, dict):
+        return None
+    task_error = task.get("task_error")
+    if isinstance(task_error, dict) and task_error:
+        return task_error
+    message = task.get("message")
+    if isinstance(message, str) and message:
+        return {"message": message}
+    return None
+
+
+def summarize_downloadable_assets(task: dict[str, Any] | list[Any] | None) -> dict[str, Any]:
+    if not isinstance(task, dict):
+        return {"has_thumbnail": False, "model_formats": [], "texture_names": []}
+    model_urls = task.get("model_urls") if isinstance(task.get("model_urls"), dict) else {}
+    texture_urls = flatten_texture_urls(task.get("texture_urls"))
+    thumbnail_url = task.get("thumbnail_url")
+    return {
+        "has_thumbnail": isinstance(thumbnail_url, str) and bool(thumbnail_url),
+        "model_formats": sorted(
+            str(target_format)
+            for target_format, url in model_urls.items()
+            if isinstance(target_format, str) and isinstance(url, str) and url
+        ),
+        "texture_names": sorted(texture_urls),
+    }
+
+
+def build_recovery_hint(
+    *,
+    final_status: str,
+    failure_stage: str | None,
+    latest_task_id: str | None,
+    downloadable_assets: dict[str, Any],
+    missing_optional_assets: list[str],
+) -> str | None:
+    task_suffix = f" using task {latest_task_id}" if latest_task_id else ""
+    if failure_stage == "preview":
+        return (
+            "Preview did not finish successfully. Adjust the prompt or preset, re-run --dry-run, then start a new asset pack"
+            f"{task_suffix}."
+        )
+    if failure_stage == "refine":
+        return (
+            "Preview succeeded but refine did not finish successfully. Inspect preview assets if present, then retry texturing or"
+            f" download the latest task{task_suffix}."
+        )
+    if final_status == "SUCCEEDED" and missing_optional_assets:
+        return (
+            "Meshy returned a succeeded task but some optional downloads were missing. Re-run --resume <asset> or"
+            f" --download-existing {latest_task_id or 'TASK_ID'} later if more URLs appear."
+        )
+    if downloadable_assets.get("model_formats") or downloadable_assets.get("has_thumbnail"):
+        return f"Assets are available for download{task_suffix}."
+    return None
 
 
 def utc_now() -> str:

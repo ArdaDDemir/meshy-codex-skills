@@ -187,6 +187,7 @@ outputs/treasure-chest/
 More detail:
 
 - [Asset pack workflow](docs/asset-pack-workflow.md)
+- [Meshy API test mode](docs/test-mode.md)
 - [Examples](examples/README.md)
 - [Plugin README](plugins/meshy-prompt-studio/README.md)
 
@@ -203,6 +204,14 @@ Check balance:
 ```bash
 python plugins/meshy-prompt-studio/mcp/meshy_mcp_server.py --balance
 ```
+
+Use Meshy API test mode for integration checks without spending credits:
+
+```bash
+python plugins/meshy-prompt-studio/mcp/meshy_mcp_server.py --test-mode --check-auth
+```
+
+Test mode only verifies request and response plumbing. It is not real generation and should not be presented as a finished asset run.
 
 Create a dry-run plan:
 
@@ -224,6 +233,42 @@ python plugins/meshy-prompt-studio/mcp/meshy_mcp_server.py \
   --confirm-spend
 ```
 
+List local asset-pack history:
+
+```bash
+python plugins/meshy-prompt-studio/mcp/meshy_mcp_server.py --history
+```
+
+Resume a known asset pack from `.meshy/history.jsonl`:
+
+```bash
+python plugins/meshy-prompt-studio/mcp/meshy_mcp_server.py --resume treasure-chest
+```
+
+Download an existing task with the clearer recovery-focused alias:
+
+```bash
+python plugins/meshy-prompt-studio/mcp/meshy_mcp_server.py --download-existing TASK_ID --type text-to-3d --out outputs/teacher
+```
+
+Open the recorded manifest summary for a known asset, slug, or task ID:
+
+```bash
+python plugins/meshy-prompt-studio/mcp/meshy_mcp_server.py --open-manifest treasure-chest
+```
+
+Package the plugin for a release:
+
+```bash
+python scripts/package_plugin.py
+```
+
+Run release/security checks:
+
+```bash
+python scripts/check_project.py
+```
+
 ## Local Testing Findings
 
 These notes came from testing the project in Codex App on Windows:
@@ -234,6 +279,10 @@ These notes came from testing the project in Codex App on Windows:
 - `dry_run=true` is the safest first asset-pack test because it plans the payload and estimated credits without creating paid Meshy generation tasks.
 - `riggable_character` prompts are now pose-aware: if `pose_mode` is overridden to `t-pose`, the preset-enriched prompt uses `T-pose` instead of the default `A-pose`.
 - Real API calls should be tested in this order: `--print-tools`, `--check-auth`, `--balance`, asset-pack `--dry-run`, and only then `--confirm-spend`.
+- Meshy test mode verifies integration behavior only. It should not be described as real generation output.
+- When a texture request follows an existing generated asset, the intended workflow is to continue from that asset instead of starting a new mesh from scratch.
+- When one reference image is not enough for side/back fidelity, prefer 3 to 4 clean angles and Multi Image to 3D instead of a collage.
+- GitHub tag releases package `plugins/meshy-prompt-studio` as a zip artifact through CI.
 
 ## Repository Structure
 
@@ -249,10 +298,12 @@ plugins/
     skills/write-meshy-prompts/
 docs/
   asset-pack-workflow.md
+  test-mode.md
   superpowers/specs/
 examples/
   prompts/
   asset-pack/
+scripts/
 tests/
 ```
 
@@ -267,7 +318,19 @@ python -m unittest discover tests
 Run a syntax/import smoke check:
 
 ```bash
-python -m compileall plugins tests
+python -m compileall plugins scripts tests
+```
+
+Run project release/security checks:
+
+```bash
+python scripts/check_project.py
+```
+
+Build the plugin package:
+
+```bash
+python scripts/package_plugin.py
 ```
 
 Contribution guidance lives in [CONTRIBUTING.md](CONTRIBUTING.md). Release notes are tracked in [CHANGELOG.md](CHANGELOG.md).
@@ -279,6 +342,10 @@ Contribution guidance lives in [CONTRIBUTING.md](CONTRIBUTING.md). Release notes
 - Generated outputs are ignored by Git through `.gitignore`.
 - The MCP server does not echo configured API keys in tool responses.
 - Paid Meshy generation requires an explicit approval flag in the asset-pack workflow.
+- Release/security checks live in `scripts/check_project.py`.
+- Secret scanning lives in `scripts/check_no_secrets.py`.
+
+See [SECURITY.md](SECURITY.md) for credential, test-mode, and generated-file guidance.
 
 ## Notes
 

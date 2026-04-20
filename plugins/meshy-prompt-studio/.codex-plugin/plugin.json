@@ -1,7 +1,7 @@
 {
   "name": "meshy-prompt-studio",
   "version": "1.3.0",
-  "description": "Codex plugin for creating Meshy prompts and one-command Meshy API asset packs from Codex.",
+  "description": "Codex plugin for safe Meshy setup, dry-run planning, asset packs, and recovery-aware follow-up workflows.",
   "author": {
     "name": "Arda Demir",
     "url": "https://github.com/ArdaDDemir"
@@ -24,8 +24,8 @@
   "mcpServers": "./.mcp.json",
   "interface": {
     "displayName": "Meshy Prompt Studio",
-    "shortDescription": "Create Meshy prompts and asset packs from Codex.",
-    "longDescription": "Meshy Prompt Studio helps Codex write focused Meshy prompts and directly run Meshy API workflows for Text to 3D asset packs, Image to 3D, textures, remeshing, rigging, animations, exports, and troubleshooting.",
+    "shortDescription": "Plan, test, generate, and recover Meshy asset workflows from Codex.",
+    "longDescription": "Meshy Prompt Studio helps Codex guide safe first runs with print-tools, test mode, and dry-run planning before paid Meshy work. It also supports Text to 3D asset packs, Image to 3D and multi-image workflows, texture and retexture follow-ups, recovery-aware history inspection, downloads, rigging, animation, and local packaging.",
     "developerName": "ArdaDDemir",
     "category": "Productivity",
     "capabilities": [
@@ -34,11 +34,19 @@
       "Write"
     ],
     "websiteURL": "https://github.com/ArdaDDemir/meshy-codex-skills",
+    "privacyPolicyURL": "https://github.com/ArdaDDemir/meshy-codex-skills#security-notes",
+    "termsOfServiceURL": "https://github.com/ArdaDDemir/meshy-codex-skills#license",
     "defaultPrompt": [
-      "Use Meshy to create a low-poly game prop asset pack and download the GLB.",
-      "Create a riggable teacher character asset pack with Meshy.",
-      "Check my Meshy API balance.",
-      "Write Image to 3D and texture prompts for this prop."
+      "Run the safe first-run check with print-tools, test mode, then dry-run.",
+      "Plan a low-poly prop asset pack and show estimated credits before spend.",
+      "If I ask for texture after a generated model, treat it as a follow-up on that asset."
+    ],
+    "composerIcon": "./assets/meshy-prompt-studio.svg",
+    "logo": "./assets/meshy-prompt-studio.svg",
+    "screenshots": [
+      "./assets/screenshot-first-run.png",
+      "./assets/screenshot-dry-run.png",
+      "./assets/screenshot-recovery.png"
     ],
     "brandColor": "#2F80ED"
   }

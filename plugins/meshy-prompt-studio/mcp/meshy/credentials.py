@@ -15,6 +15,7 @@ from .errors import MeshyError
 
 
 APP_NAME = "meshy-prompt-studio"
+TEST_MODE_API_KEY = "msy_dummy_api_key_for_test_mode_12345678"
 
 
 def credential_path() -> Path:

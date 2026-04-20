@@ -135,15 +135,50 @@ Download a completed task:
 python plugins/meshy-prompt-studio/mcp/meshy_mcp_server.py --download TASK_ID --type text-to-3d --out outputs/teacher
 ```
 
+Download a completed task using the clearer recovery alias:
+
+```bash
+python plugins/meshy-prompt-studio/mcp/meshy_mcp_server.py --download-existing TASK_ID --type text-to-3d --out outputs/teacher
+```
+
 List recent tasks:
 
 ```bash
 python plugins/meshy-prompt-studio/mcp/meshy_mcp_server.py --list-recent text-to-3d
 ```
 
+List local workflow history:
+
+```bash
+python plugins/meshy-prompt-studio/mcp/meshy_mcp_server.py --history
+```
+
+Resume a known asset pack from `.meshy/history.jsonl`, wait for its latest task, and download available assets:
+
+```bash
+python plugins/meshy-prompt-studio/mcp/meshy_mcp_server.py --resume treasure-chest
+```
+
+Open the recorded manifest summary for a known asset name, slug, or task id:
+
+```bash
+python plugins/meshy-prompt-studio/mcp/meshy_mcp_server.py --open-manifest treasure-chest
+```
+
+The recorded `manifest.json` and `.meshy/history.jsonl` now keep recovery-oriented fields such as:
+
+- `latest_task_id`
+- `manifest_path`
+- `failure_stage`
+- `task_error`
+- `recovery_hint`
+- `downloadable_assets`
+
 ## Safety Checklist
 
 - Run `--dry-run` before your first paid task.
+- Use `--test-mode` for API integration checks that should not consume credits.
+- Treat `--test-mode` as an integration check only. It does not mean a real asset was generated.
 - Keep `MESHY_API_KEY` out of source-controlled files.
 - Use `max_spend` and `min_balance` for budget protection.
 - Keep generated `outputs/`, `.meshy/`, and `meshy-downloads/` out of Git.

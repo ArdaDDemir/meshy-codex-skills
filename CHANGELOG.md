@@ -6,7 +6,15 @@ This project follows a lightweight, human-written changelog format inspired by K
 
 ## Unreleased
 
-- Nothing yet.
+- Add release packaging for `meshy-prompt-studio-<version>.zip`.
+- Add project release/security checks.
+- Add Meshy API test-mode documentation and CLI support.
+- Add local asset-pack history listing and resume/download helpers.
+- Add `--download-existing` and `--open-manifest` recovery helpers.
+- Enrich manifests and history records with recovery metadata and clearer failure hints.
+- Split secret scanning into `scripts/check_no_secrets.py`.
+- Improve plugin marketplace metadata with screenshots, safer first-run prompts, and clearer UX copy.
+- Tighten prompt/skill guidance so texture follow-ups stay attached to the current asset and multi-view is preferred when one angle is insufficient.
 
 ## 1.3.0 - 2026-04-20
 

@@ -18,11 +18,13 @@ Use this checklist before writing any Meshy prompt or Meshy workflow answer:
 - If the user asks about latest Meshy behavior, pricing, API fields, or UI limits, verify from official Meshy sources before giving exact current claims.
 - Treat community/Reddit patterns as anecdotal workflow signals, not guaranteed Meshy behavior.
 - Preserve text/logo workflows: remove text before mesh generation; add text or logos during texture when possible.
+- If the user asks for texture after an existing generated model, assume the texture request applies to that existing asset unless the conversation clearly says otherwise.
+- If image-based geometry fidelity matters and the user only has one angle, recommend 3 to 4 separate views and prefer Multi-view over a single-image guess.
 - Avoid unsupported or risky prompt structures unless the user explicitly requests them.
 
 ## Direct Meshy API Execution
 
-When Meshy API MCP tools are available and the user asks Codex to create, check, download, remesh, retexture, rig, or animate a Meshy asset directly, use the Meshy MCP tools instead of stopping at prompt text. Prefer `meshy_create_text_to_3d_asset_pack` for Text to 3D requests that should create, wait, refine, download, and package an asset in one command. Before paid generation, report the estimated credit cost and continue only after user approval or an explicit `confirm_spend=true`. Keep API keys out of responses and files. Check authentication or balance before diagnosing API failures. For explicit generation requests, submit the task, poll until a terminal status when practical, and return task IDs, status, model URLs, downloaded file paths, and credit usage when available. Do not create paid tasks when the user only asks for a prompt or workflow plan.
+When Meshy API MCP tools are available and the user asks Codex to create, check, download, remesh, retexture, rig, or animate a Meshy asset directly, use the Meshy MCP tools instead of stopping at prompt text. Prefer `meshy_create_text_to_3d_asset_pack` for Text to 3D requests that should create, wait, refine, download, and package an asset in one command. Before paid generation, report the estimated credit cost and continue only after user approval or an explicit `confirm_spend=true`. Keep API keys out of responses and files. Check authentication or balance before diagnosing API failures. For explicit generation requests, submit the task, poll until a terminal status when practical, and return task IDs, status, model URLs, downloaded file paths, and credit usage when available. Do not create paid tasks when the user only asks for a prompt or workflow plan. When a user asks for texture after a recently created asset, default to that asset and prefer `meshy_refine_text_to_3d` or `meshy_retexture` instead of creating a brand-new mesh. When a single image is not enough to preserve side or back shape, ask for separate front, back, and side views and prefer `meshy_create_multi_image_to_3d`.
 
 ## Response Shape
 
@@ -53,6 +55,9 @@ Avoid:
 - Use Text to 3D for fast concept exploration, draft props, simple stylized assets, and cases where exact silhouette is not critical.
 - Use AI image -> Image to 3D when exact shape, controlled style, consistent asset sets, hero props, characters, costumes, or product-like forms matter.
 - Use Multi-view when side/back geometry matters. Use separate images of the same object, not a collage.
+- If a texture request follows an already generated asset in the same thread, treat it as a follow-up on that asset unless the user explicitly switches targets.
+- Prefer `meshy_retexture` for completed textured models and `meshy_refine_text_to_3d` when the active asset is still in the Text to 3D preview/refine flow.
+- If the user only provides one reference image for an object whose side/back silhouette matters, recommend 3 to 4 clean angles and move to Multi-view when those images exist.
 - Use A-pose or T-pose for humanoid rigging; prefer A-pose unless a target pipeline expects T-pose.
 - For riggable characters, prioritize full body, standard humanoid proportions, separated limbs, visible joints, fitted clothing, no cape, no long skirt, no weapon attached.
 - For 3D printing, prioritize single solid object, flat stable base, thick printable parts, minimal overhangs, no floating parts, STL or 3MF export, and slicer inspection.

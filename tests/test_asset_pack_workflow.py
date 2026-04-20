@@ -251,9 +251,13 @@ class AssetPackWorkflowTests(unittest.TestCase):
             manifest = json.loads((asset_dir / "manifest.json").read_text(encoding="utf-8"))
             self.assertEqual(manifest["preview_task_id"], "preview-id")
             self.assertEqual(manifest["refine_task_id"], "refine-id")
+            self.assertEqual(manifest["latest_task_id"], "refine-id")
+            self.assertEqual(manifest["failure_stage"], None)
             self.assertEqual(manifest["credits_spent"], 30)
             self.assertEqual(manifest["balance_before"], 1574)
             self.assertEqual(manifest["balance_after"], 1544)
+            self.assertEqual(manifest["downloadable_assets"]["model_formats"], ["glb"])
+            self.assertEqual(manifest["downloadable_assets"]["texture_names"], ["base_color", "normal"])
             self.assertNotIn("msy_test_key", json.dumps(manifest))
             self.assertIn("friendly classroom teacher character", (asset_dir / "prompt.md").read_text())
 
@@ -261,6 +265,8 @@ class AssetPackWorkflowTests(unittest.TestCase):
             self.assertEqual(len(history_records), 1)
             self.assertEqual(history_records[0]["asset_name"], "Teacher Model")
             self.assertEqual(history_records[0]["status"], "SUCCEEDED")
+            self.assertEqual(history_records[0]["latest_task_id"], "refine-id")
+            self.assertEqual(history_records[0]["manifest_path"], str(asset_dir / "manifest.json"))
 
         preview_posts = [
             request for request in transport.requests if request.get("method") == "POST" and request["payload"]["mode"] == "preview"
@@ -304,7 +310,13 @@ class AssetPackWorkflowTests(unittest.TestCase):
             manifest = json.loads((asset_dir / "manifest.json").read_text(encoding="utf-8"))
             self.assertEqual(manifest["final_status"], "FAILED")
             self.assertEqual(manifest["refine_task_id"], None)
-            self.assertEqual(json.loads(history_path.read_text())["status"], "FAILED")
+            self.assertEqual(manifest["failure_stage"], "preview")
+            self.assertEqual(manifest["task_error"]["message"], "bad prompt")
+            self.assertIn("Adjust the prompt", manifest["recovery_hint"])
+            history_record = json.loads(history_path.read_text())
+            self.assertEqual(history_record["status"], "FAILED")
+            self.assertEqual(history_record["failure_stage"], "preview")
+            self.assertEqual(history_record["latest_task_id"], "preview-id")
 
         refine_posts = [
             request
@@ -312,6 +324,60 @@ class AssetPackWorkflowTests(unittest.TestCase):
             if request.get("method") == "POST" and request.get("payload", {}).get("mode") == "refine"
         ]
         self.assertEqual(refine_posts, [])
+
+    def test_failed_refine_records_recovery_metadata(self):
+        responses = [
+            {"balance": 100},
+            {"result": "preview-id"},
+            {
+                "id": "preview-id",
+                "status": "SUCCEEDED",
+                "progress": 100,
+                "model_urls": {"glb": "https://assets.meshy.ai/preview.glb"},
+                "thumbnail_url": "https://assets.meshy.ai/preview.png",
+                "texture_urls": [],
+            },
+            {"result": "refine-id"},
+            {
+                "id": "refine-id",
+                "status": "FAILED",
+                "progress": 100,
+                "task_error": {"message": "texture stage failed"},
+                "model_urls": {},
+                "texture_urls": [],
+            },
+            {"balance": 80},
+        ]
+        downloads = {
+            "https://assets.meshy.ai/preview.glb": b"preview-glb",
+            "https://assets.meshy.ai/preview.png": b"preview-png",
+        }
+        transport = FakeTransport(responses, downloads)
+        client = self.module.MeshyClient(api_key="msy_test_key", transport=transport)
+
+        with TemporaryDirectory() as temp_dir:
+            history_path = Path(temp_dir) / ".meshy" / "history.jsonl"
+            result = client.create_text_to_3d_asset_pack(
+                {
+                    "asset_name": "Refine Failed",
+                    "prompt": "teacher bust",
+                    "confirm_spend": True,
+                    "output_dir": str(Path(temp_dir) / "outputs"),
+                    "history_path": str(history_path),
+                    "poll_interval_seconds": 0,
+                }
+            )
+
+            manifest = json.loads((Path(result["asset_dir"]) / "manifest.json").read_text(encoding="utf-8"))
+            self.assertEqual(manifest["final_status"], "FAILED")
+            self.assertEqual(manifest["failure_stage"], "refine")
+            self.assertEqual(manifest["latest_task_id"], "refine-id")
+            self.assertEqual(manifest["task_error"]["message"], "texture stage failed")
+            self.assertIn("retry texturing", manifest["recovery_hint"])
+
+            history_record = json.loads(history_path.read_text())
+            self.assertEqual(history_record["failure_stage"], "refine")
+            self.assertEqual(history_record["latest_task_id"], "refine-id")
 
     def test_missing_texture_urls_do_not_fail_asset_pack(self):
         final_glb = "https://assets.meshy.ai/final.glb"
@@ -362,7 +428,43 @@ class AssetPackWorkflowTests(unittest.TestCase):
 
         self.assertEqual(transport.requests, [])
 
-    def test_cli_create_text_asset_routes_to_asset_pack_workflow(self):
+    def test_cli_create_text_asset_dry_run_does_not_require_client_factory(self):
+        self.module = load_server_module()
+        calls = []
+
+        def failing_client_factory():
+            calls.append("called")
+            raise AssertionError("dry-run should not require a configured API client")
+
+        original_client_from_config = self.module.client_from_config
+        self.module.client_from_config = failing_client_factory
+        try:
+            with TemporaryDirectory() as temp_dir:
+                prompt_path = Path(temp_dir) / "prompt.txt"
+                prompt_path.write_text("wooden teacher desk", encoding="utf-8")
+                stdout = io.StringIO()
+                with contextlib.redirect_stdout(stdout):
+                    exit_code = self.module.main(
+                        [
+                            "--create-text-asset",
+                            str(prompt_path),
+                            "--name",
+                            "teacher-desk",
+                            "--preset",
+                            "low_poly_asset",
+                            "--output-dir",
+                            str(Path(temp_dir) / "outputs"),
+                            "--dry-run",
+                        ]
+                    )
+        finally:
+            self.module.client_from_config = original_client_from_config
+
+        self.assertEqual(exit_code, 0)
+        self.assertEqual(calls, [])
+        self.assertIn('"dry_run": true', stdout.getvalue())
+
+    def test_cli_create_text_asset_routes_paid_workflow_to_client_factory(self):
         calls = []
 
         class FakeClient:
@@ -388,7 +490,7 @@ class AssetPackWorkflowTests(unittest.TestCase):
                             "low_poly_asset",
                             "--output-dir",
                             str(Path(temp_dir) / "outputs"),
-                            "--dry-run",
+                            "--confirm-spend",
                         ]
                     )
         finally:
@@ -398,8 +500,171 @@ class AssetPackWorkflowTests(unittest.TestCase):
         self.assertEqual(calls[0]["prompt"], "wooden teacher desk")
         self.assertEqual(calls[0]["asset_name"], "teacher-desk")
         self.assertEqual(calls[0]["preset"], "low_poly_asset")
-        self.assertTrue(calls[0]["dry_run"])
+        self.assertFalse(calls[0]["dry_run"])
+        self.assertTrue(calls[0]["confirm_spend"])
         self.assertIn('"ok": true', stdout.getvalue())
+
+    def test_cli_history_lists_records_without_api_client(self):
+        with TemporaryDirectory() as temp_dir:
+            history_path = Path(temp_dir) / "history.jsonl"
+            history_path.write_text(
+                json.dumps(
+                    {
+                        "asset_name": "Teacher",
+                        "asset_slug": "teacher",
+                        "status": "SUCCEEDED",
+                        "preview_task_id": "preview-id",
+                        "latest_task_id": "preview-id",
+                        "manifest_path": str(Path(temp_dir) / "outputs" / "teacher" / "manifest.json"),
+                    }
+                )
+                + "\n",
+                encoding="utf-8",
+            )
+            stdout = io.StringIO()
+            with contextlib.redirect_stdout(stdout):
+                exit_code = self.module.main(["--history", "--history-path", str(history_path)])
+
+        self.assertEqual(exit_code, 0)
+        self.assertIn('"asset_name": "Teacher"', stdout.getvalue())
+        self.assertIn('"latest_task_id": "preview-id"', stdout.getvalue())
+
+    def test_cli_resume_downloads_assets_from_history_record(self):
+        calls = []
+
+        class FakeClient:
+            def wait_for_task(self, arguments):
+                calls.append(("wait", arguments))
+                return {
+                    "status": "SUCCEEDED",
+                    "model_urls": {"glb": "https://assets.meshy.ai/model.glb"},
+                    "thumbnail_url": "https://assets.meshy.ai/preview.png",
+                    "texture_urls": [{"base_color": "https://assets.meshy.ai/base.png"}],
+                }
+
+            def download_asset(self, arguments):
+                calls.append(("download", arguments))
+                return {"path": arguments["output_path"], "bytes": 10}
+
+        with TemporaryDirectory() as temp_dir:
+            asset_dir = Path(temp_dir) / "outputs" / "teacher"
+            history_path = Path(temp_dir) / "history.jsonl"
+            history_path.write_text(
+                json.dumps(
+                    {
+                        "asset_name": "Teacher",
+                        "asset_slug": "teacher",
+                        "asset_dir": str(asset_dir),
+                        "status": "IN_PROGRESS",
+                        "preview_task_id": "preview-id",
+                        "manifest_path": str(asset_dir / "manifest.json"),
+                    }
+                )
+                + "\n",
+                encoding="utf-8",
+            )
+            original_client_from_config = self.module.client_from_config
+            self.module.client_from_config = lambda: FakeClient()
+            try:
+                stdout = io.StringIO()
+                with contextlib.redirect_stdout(stdout):
+                    exit_code = self.module.main(
+                        [
+                            "--resume",
+                            "teacher",
+                            "--history-path",
+                            str(history_path),
+                            "--poll-interval",
+                            "0",
+                        ]
+                    )
+            finally:
+                self.module.client_from_config = original_client_from_config
+
+        self.assertEqual(exit_code, 0)
+        self.assertEqual(calls[0][0], "wait")
+        self.assertEqual(calls[0][1]["task_id"], "preview-id")
+        self.assertGreaterEqual(len([call for call in calls if call[0] == "download"]), 3)
+        self.assertIn('"status": "SUCCEEDED"', stdout.getvalue())
+        self.assertIn('"manifest_path":', stdout.getvalue())
+
+    def test_cli_download_existing_alias_matches_download(self):
+        class FakeClient:
+            def get_task(self, arguments):
+                return {"model_urls": {"glb": f"https://assets.meshy.ai/{arguments['task_id']}.glb"}}
+
+            def download_asset(self, arguments):
+                return {"path": arguments["output_path"], "bytes": 10}
+
+        outputs = []
+        for flag in ("--download", "--download-existing"):
+            original_client_from_config = self.module.client_from_config
+            self.module.client_from_config = lambda: FakeClient()
+            try:
+                with TemporaryDirectory() as temp_dir:
+                    stdout = io.StringIO()
+                    with contextlib.redirect_stdout(stdout):
+                        exit_code = self.module.main([flag, "task-123", "--out", str(Path(temp_dir) / "model.glb")])
+                    outputs.append((exit_code, json.loads(stdout.getvalue())))
+            finally:
+                self.module.client_from_config = original_client_from_config
+
+        self.assertEqual(outputs[0][0], 0)
+        self.assertEqual(outputs[1][0], 0)
+        self.assertEqual(outputs[0][1]["task_id"], "task-123")
+        self.assertEqual(outputs[0][1]["task_type"], outputs[1][1]["task_type"])
+        self.assertEqual(outputs[0][1]["downloads"]["glb"]["bytes"], outputs[1][1]["downloads"]["glb"]["bytes"])
+        self.assertEqual(
+            Path(outputs[0][1]["downloads"]["glb"]["path"]).name,
+            Path(outputs[1][1]["downloads"]["glb"]["path"]).name,
+        )
+
+    def test_cli_open_manifest_resolves_manifest_from_history(self):
+        with TemporaryDirectory() as temp_dir:
+            asset_dir = Path(temp_dir) / "outputs" / "teacher"
+            asset_dir.mkdir(parents=True)
+            manifest_path = asset_dir / "manifest.json"
+            manifest_path.write_text(
+                json.dumps(
+                    {
+                        "asset_name": "Teacher",
+                        "asset_slug": "teacher",
+                        "final_status": "FAILED",
+                        "failure_stage": "refine",
+                        "latest_task_id": "refine-id",
+                        "missing_optional_assets": ["textures"],
+                        "downloadable_assets": {"has_thumbnail": False, "model_formats": ["glb"], "texture_names": []},
+                        "recovery_hint": "Retry texturing.",
+                    }
+                ),
+                encoding="utf-8",
+            )
+            history_path = Path(temp_dir) / "history.jsonl"
+            history_path.write_text(
+                json.dumps(
+                    {
+                        "asset_name": "Teacher",
+                        "asset_slug": "teacher",
+                        "asset_dir": str(asset_dir),
+                        "manifest_path": str(manifest_path),
+                        "preview_task_id": "preview-id",
+                        "refine_task_id": "refine-id",
+                    }
+                )
+                + "\n",
+                encoding="utf-8",
+            )
+
+            stdout = io.StringIO()
+            with contextlib.redirect_stdout(stdout):
+                exit_code = self.module.main(["--open-manifest", "teacher", "--history-path", str(history_path)])
+
+        payload = json.loads(stdout.getvalue())
+        self.assertEqual(exit_code, 0)
+        self.assertEqual(Path(payload["manifest_path"]).name, "manifest.json")
+        self.assertTrue(payload["manifest_path"].replace("/", "\\").endswith("\\outputs\\teacher\\manifest.json"))
+        self.assertEqual(payload["summary"]["failure_stage"], "refine")
+        self.assertEqual(payload["manifest"]["latest_task_id"], "refine-id")
 
 
 if __name__ == "__main__":

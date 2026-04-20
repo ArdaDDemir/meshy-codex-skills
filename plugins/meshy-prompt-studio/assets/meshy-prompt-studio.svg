@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" role="img" aria-label="Meshy Prompt Studio">
+  <rect width="128" height="128" rx="24" fill="#101820"/>
+  <path d="M28 36h72v56H28z" fill="#2F80ED"/>
+  <path d="M42 50h44v8H42zM42 66h30v8H42z" fill="#FFFFFF"/>
+  <path d="M84 62l18 10-18 10z" fill="#35D07F"/>
+  <path d="M28 92l20-20h52v20z" fill="#1B5FBF"/>
+</svg>
